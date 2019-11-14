@@ -67,9 +67,9 @@ func (s Shapes) Less(i, j int) bool {
 	return s[i].Volume() < s[j].Volume()
 }
 
-func appendShape(shapes Shapes, shape Shape3D) Shapes {
+func (s Shapes) appendShape(shape Shape3D) {
 	fmt.Println("Appending 3D shape:", shape)
-	return append(shapes, shape)
+	s = append(s, shape)
 }
 
 func printShapeVolumes(shapes Shapes) {
@@ -93,7 +93,7 @@ func sortShapes(shapes Shapes) Shapes {
 func main() {
 	shapes := make(Shapes, 0, 4)
 
-	shapes = appendShape(shapes, &Sphere{5})
+	shapes.appendShape(&Sphere{5})
 	shapes = appendShape(shapes, &Sphere{6.2})
 	shapes = appendShape(shapes, &Cube{10})
 	shapes = appendShape(shapes, &Cone{10, 5})
