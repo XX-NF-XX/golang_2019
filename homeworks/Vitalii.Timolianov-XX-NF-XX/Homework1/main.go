@@ -57,14 +57,14 @@ func (c *Cube) String() string {
 // Shapes implements sort.Interface for []Shape3D based on shape volume
 type Shapes []Shape3D
 
-func (s Shapes) Len() int {
-	return len(s)
+func (s *Shapes) Len() int {
+	return len(*s)
 }
-func (s Shapes) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
+func (s *Shapes) Swap(i, j int) {
+	(*s)[i], (*s)[j] = (*s)[j], (*s)[i]
 }
-func (s Shapes) Less(i, j int) bool {
-	return s[i].Volume() < s[j].Volume()
+func (s *Shapes) Less(i, j int) bool {
+	return (*s)[i].Volume() < (*s)[j].Volume()
 }
 
 func (s *Shapes) appendShapes(newShapes ...Shape3D) {
