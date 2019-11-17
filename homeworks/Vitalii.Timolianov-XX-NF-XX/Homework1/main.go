@@ -67,36 +67,35 @@ func (s Shapes) Less(i, j int) bool {
 	return s[i].Volume() < s[j].Volume()
 }
 
-func appendShape(shapes Shapes, shape Shape3D) Shapes {
-	fmt.Println("Appending 3D shape:", shape)
-	return append(shapes, shape)
+func (s *Shapes) appendShapes(newShapes ...Shape3D) {
+	for _, shape := range newShapes {
+		fmt.Println("Appending 3D shape:", shape)
+		*s = append(*s, shape)
+	}
 }
 
-func printShapeVolumes(shapes Shapes) {
+func (s *Shapes) printVolumes() {
 	fmt.Println("List of shapes:")
-	for i, s := range shapes {
+	for i, s := range *s {
 		fmt.Printf(" Shape index: %v; Volume: %v - %v\n", i, s.Volume(), s)
 	}
 }
 
 func sortShapes(shapes Shapes) Shapes {
 	fmt.Printf("\nUnsorted ")
-	printShapeVolumes(shapes)
+	shapes.printVolumes()
 
 	sort.Sort(shapes)
 
 	fmt.Printf("\nSorted ")
-	printShapeVolumes(shapes)
+	shapes.printVolumes()
 	return shapes
 }
 
 func main() {
 	shapes := make(Shapes, 0, 4)
 
-	shapes = appendShape(shapes, &Sphere{5})
-	shapes = appendShape(shapes, &Sphere{6.2})
-	shapes = appendShape(shapes, &Cube{10})
-	shapes = appendShape(shapes, &Cone{10, 5})
+	shapes.appendShapes(&Sphere{5}, &Sphere{6.2}, &Cube{10}, &Cone{10, 5})
 
 	shapes = sortShapes(shapes)
 }
