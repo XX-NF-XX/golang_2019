@@ -81,21 +81,18 @@ func (s *Shapes) printVolumes() {
 	}
 }
 
-func sortShapes(shapes Shapes) Shapes {
+func (s *Shapes) sortShapes() {
 	fmt.Printf("\nUnsorted ")
-	shapes.printVolumes()
+	s.printVolumes()
 
-	sort.Sort(shapes)
+	sort.Sort(s)
 
 	fmt.Printf("\nSorted ")
-	shapes.printVolumes()
-	return shapes
+	s.printVolumes()
 }
 
 func main() {
 	shapes := make(Shapes, 0, 4)
-
 	shapes.appendShapes(&Sphere{5}, &Sphere{6.2}, &Cube{10}, &Cone{10, 5})
-
-	shapes = sortShapes(shapes)
+	shapes.sortShapes()
 }
