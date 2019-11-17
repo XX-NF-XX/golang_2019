@@ -1,0 +1,9 @@
+{
+  "key": "Go",
+  "aliases": ["go", "Golang", "golang"],
+  "name": "Go programming language",
+  "authors": ["Robert Griesemer", "Rob Pike", "Ken Thompson"],
+  "designed": "2007",
+  "introduced": "2009",
+  "announced": "2012"
+}
