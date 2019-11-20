@@ -24,14 +24,14 @@ type JSON map[string]interface{}
 // Storages - map of JSON storages
 type Storages map[string]JSON
 
-func (s *Storages) checkError(err error) {
+func (s Storages) checkError(err error) {
 	if err != nil {
 		fmt.Println("error:", err)
 		panic(err)
 	}
 }
 
-func (s *Storages) unmarshalJSON(data []byte) JSON {
+func (s Storages) unmarshalJSON(data []byte) JSON {
 	var jsonData JSON
 	err := json.Unmarshal(data, &jsonData)
 	s.checkError(err)
@@ -39,41 +39,41 @@ func (s *Storages) unmarshalJSON(data []byte) JSON {
 	return jsonData
 }
 
-func (s *Storages) createURLStorage(url *string) {
-	response, httpErr := http.Get(*url)
+func (s Storages) createURLStorage(url string) {
+	response, httpErr := http.Get(url)
 	s.checkError(httpErr)
 
 	defer response.Body.Close()
 	data, readErr := ioutil.ReadAll(response.Body)
 	s.checkError(readErr)
 
-	(*s)[*url] = s.unmarshalJSON(data)
+	s[url] = s.unmarshalJSON(data)
 }
 
-func (s *Storages) createFileStorage(path *string) {
+func (s Storages) createFileStorage(path string) {
 	data, err := ioutil.ReadFile(sourceFilePath)
 	s.checkError(err)
 
-	(*s)[*path] = s.unmarshalJSON(data)
+	s[path] = s.unmarshalJSON(data)
 }
 
-func (s *Storages) createStorage(source *string) {
-	_, ok := (*s)[*source]
+func (s Storages) createStorage(source string) {
+	_, ok := s[source]
 	if ok {
 		return
 	}
 
-	if strings.HasPrefix(*source, "http://") || strings.HasPrefix(*source, "https://") {
+	if strings.HasPrefix(source, "http://") || strings.HasPrefix(source, "https://") {
 		s.createURLStorage(source)
 	} else {
 		s.createFileStorage(source)
 	}
 }
 
-func (s *Storages) Read(source string, key string) string {
-	s.createStorage(&source)
+func (s Storages) Read(source string, key string) string {
+	s.createStorage(source)
 
-	jsonData := (*s)[source]
+	jsonData := s[source]
 	switch value := jsonData[key].(type) {
 	case string:
 		return value
