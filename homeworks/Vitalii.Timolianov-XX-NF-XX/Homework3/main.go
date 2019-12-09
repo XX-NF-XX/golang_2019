@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"sync"
+
 	flag "github.com/spf13/pflag"
 )
 
@@ -28,6 +30,11 @@ func parseFlags() Products {
 	return Products(*order)
 }
 
+func closeOnDone(c chan Machines, waitgroup *sync.WaitGroup) {
+	waitgroup.Wait()
+	close(c)
+}
+
 // Makes shallow copy of Machines without first element at 'index'
 func (machines Machines) copyWithout(index int) Machines {
 	newMachines := make(Machines, len(machines))
@@ -43,12 +50,15 @@ func (machines Machines) copyWithout(index int) Machines {
 	return newMachines
 }
 
-func findProduct(order Products, machines Machines) (Machines, bool) {
-	if len(order) == 0 {
-		return machines, true
-	}
-	orderedProduct := order[0]
+func findProduct(order Products, machines Machines, c chan Machines, waitgroup *sync.WaitGroup) {
+	defer waitgroup.Done()
 
+	if len(order) == 0 {
+		c <- machines
+		return
+	}
+
+	orderedProduct := order[0]
 	for i, m := range machines {
 		if len(m) == 0 {
 			continue
@@ -58,18 +68,29 @@ func findProduct(order Products, machines Machines) (Machines, bool) {
 			reducedMachines := machines.copyWithout(i)
 			orderRest := order[1:]
 
-			usedMachines, ok := findProduct(orderRest, reducedMachines)
-			if ok {
-				return usedMachines, ok
-			}
+			waitgroup.Add(1)
+			go findProduct(orderRest, reducedMachines, c, waitgroup)
 		}
 	}
-
-	return nil, false
 }
 
-func (machines Machines) getOrderSolutions(order Products) (Machines, bool) {
-	return findProduct(order, machines)
+func (machines Machines) getOrderSolutions(order Products) ([]Machines, bool) {
+	var waitgroup sync.WaitGroup
+	c := make(chan Machines, 4)
+	var possibleStates = []Machines{}
+
+	waitgroup.Add(1)
+	go findProduct(order, machines, c, &waitgroup)
+	go closeOnDone(c, &waitgroup)
+
+	for m := range c {
+		possibleStates = append(possibleStates, m)
+	}
+
+	if len(possibleStates) <= 0 {
+		return nil, false
+	}
+	return possibleStates, true
 }
 
 func main() {
@@ -82,5 +103,9 @@ func main() {
 		return
 	}
 
-	fmt.Printf("Order fulfilled!\nState of vending machines: %v\n", usedMachines)
+	fmt.Printf("Order can be fulfilled in %v different ways.\n", len(usedMachines))
+	fmt.Printf("\nPossible states:\n")
+	for i, m := range usedMachines {
+		fmt.Printf("#%v %v\n", i+1, m)
+	}
 }
