@@ -37,7 +37,6 @@ func (machines Machines) copyWithout(index int) Machines {
 			newMachines[i] = m[1:]
 			continue
 		}
-
 		newMachines[i] = m
 	}
 
@@ -59,9 +58,9 @@ func findProduct(order Products, machines Machines) (Machines, bool) {
 			reducedMachines := machines.copyWithout(i)
 			orderRest := order[1:]
 
-			result, ok := findProduct(orderRest, reducedMachines)
+			usedMachines, ok := findProduct(orderRest, reducedMachines)
 			if ok {
-				return result, ok
+				return usedMachines, ok
 			}
 		}
 	}
@@ -77,11 +76,11 @@ func main() {
 	machines := buildMachines()
 	order := parseFlags()
 
-	result, ok := machines.getOrderSolutions(order)
+	usedMachines, ok := machines.getOrderSolutions(order)
 	if !ok {
 		fmt.Printf("This order cannot be fulfilled!\n")
 		return
 	}
 
-	fmt.Printf("Order fulfilled!\n State of vending machines: %v\n", result)
+	fmt.Printf("Order fulfilled!\nState of vending machines: %v\n", usedMachines)
 }
