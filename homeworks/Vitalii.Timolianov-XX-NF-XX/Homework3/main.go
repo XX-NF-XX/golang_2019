@@ -1,35 +1,52 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 
 	flag "github.com/spf13/pflag"
 )
 
+var defaultOrder = []uint{1, 2, 1, 3, 4}
+var defaultState = "[[1,1,2,3],[2,3,4],[1,3],[5,4,3],[2,2,1]]"
+
 // Products - slice of products
 type Products []uint
 
-// Machines - slice of machines that has products
+// Machines - slice of machines with products
 type Machines []Products
 
-func buildMachines() Machines {
-	return Machines{
-		Products{1, 1, 2, 3},
-		Products{2, 3, 4},
-		Products{1, 3},
-		Products{5, 4, 3},
-		Products{2, 2, 1},
+// Converts JSON state string to Machines
+func getMachinesFromState(state *string) Machines {
+	var stateBytes = []byte(*state)
+	var machines Machines
+
+	err := json.Unmarshal(stateBytes, &machines)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(3)
 	}
+
+	return machines
 }
 
-func parseFlags() Products {
-	var order *[]uint = flag.UintSlice("order", nil, "Order to fulfil")
-	// var rawState *[]string = flag.StringArray("state", nil, "Current state of vending machines")
+// Converts parameters to valid data
+func parseFlags() (Products, Machines) {
+	var order *[]uint = flag.UintSlice("order", defaultOrder, "Order to fulfill e.g.: {4,1}")
+	var rawState *string = flag.String("state", defaultState, "Current state of vending machines e.g.: [[1,2],[4,3]]")
+
 	flag.Parse()
-	return Products(*order)
+
+	machines := getMachinesFromState(rawState)
+	products := Products(*order)
+
+	return products, machines
 }
 
+// Closes channel when wait group is done (I don't like it, but it works)
 func closeOnDone(c chan Machines, waitgroup *sync.WaitGroup) {
 	waitgroup.Wait()
 	close(c)
@@ -50,6 +67,8 @@ func (machines Machines) copyWithout(index int) Machines {
 	return newMachines
 }
 
+// Finds the top order product in machines
+// All the logic/magic happens here
 func findProduct(order Products, machines Machines, c chan Machines, waitgroup *sync.WaitGroup) {
 	defer waitgroup.Done()
 
@@ -74,10 +93,12 @@ func findProduct(order Products, machines Machines, c chan Machines, waitgroup *
 	}
 }
 
+// Tries to resolve order and return possible states of vending machines
 func (machines Machines) getOrderSolutions(order Products) ([]Machines, bool) {
 	var waitgroup sync.WaitGroup
-	c := make(chan Machines, 4)
 	var possibleStates = []Machines{}
+
+	c := make(chan Machines, 8)
 
 	waitgroup.Add(1)
 	go findProduct(order, machines, c, &waitgroup)
@@ -87,25 +108,26 @@ func (machines Machines) getOrderSolutions(order Products) ([]Machines, bool) {
 		possibleStates = append(possibleStates, m)
 	}
 
-	if len(possibleStates) <= 0 {
-		return nil, false
-	}
-	return possibleStates, true
+	ok := len(possibleStates) > 0
+	return possibleStates, ok
 }
 
+// Yep, it's where the whole thing starts
 func main() {
-	machines := buildMachines()
-	order := parseFlags()
+	order, machines := parseFlags()
+	fmt.Printf("order: %v\n", order)
+	fmt.Printf("state: %v\n\n", machines)
 
-	usedMachines, ok := machines.getOrderSolutions(order)
+	possibleStates, ok := machines.getOrderSolutions(order)
 	if !ok {
 		fmt.Printf("This order cannot be fulfilled!\n")
-		return
+		os.Exit(1)
 	}
 
-	fmt.Printf("Order can be fulfilled in %v different ways.\n", len(usedMachines))
-	fmt.Printf("\nPossible states:\n")
-	for i, m := range usedMachines {
-		fmt.Printf("#%v %v\n", i+1, m)
+	fmt.Printf("Order can be fulfilled in %v way(s).\n", len(possibleStates))
+	fmt.Printf("\nPossible vending machine states after fulfillment:\n")
+
+	for i, s := range possibleStates {
+		fmt.Printf("#%v %v\n", i+1, s)
 	}
 }
