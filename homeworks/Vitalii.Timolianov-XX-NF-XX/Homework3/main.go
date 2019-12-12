@@ -72,11 +72,6 @@ func (machines Machines) copyWithout(index int) Machines {
 func findProduct(order Products, machines Machines, c chan Machines, waitgroup *sync.WaitGroup) {
 	defer waitgroup.Done()
 
-	if len(order) == 0 {
-		c <- machines
-		return
-	}
-
 	orderedProduct := order[0]
 	for i, m := range machines {
 		if len(m) == 0 {
@@ -86,6 +81,11 @@ func findProduct(order Products, machines Machines, c chan Machines, waitgroup *
 		if m[0] == orderedProduct {
 			reducedMachines := machines.copyWithout(i)
 			orderRest := order[1:]
+
+			if len(orderRest) == 0 {
+				c <- reducedMachines
+				return
+			}
 
 			waitgroup.Add(1)
 			go findProduct(orderRest, reducedMachines, c, waitgroup)
@@ -112,7 +112,7 @@ func (machines Machines) getOrderSolutions(order Products) ([]Machines, bool) {
 	return possibleStates, ok
 }
 
-// Yep, it's where the whole thing starts
+// Yep, this is where the whole thing starts
 func main() {
 	order, machines := parseFlags()
 	fmt.Printf("order: %v\n", order)
