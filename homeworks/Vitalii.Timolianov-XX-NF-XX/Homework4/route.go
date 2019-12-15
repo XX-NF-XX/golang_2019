@@ -29,7 +29,9 @@ func getOrder(c *gin.Context) {
 	id := c.Param("id")
 
 	if order, ok := store.getOrder(id); ok {
-		c.JSON(http.StatusOK, order)
+		c.JSON(http.StatusOK, gin.H{
+			"status": order.Status.String(),
+		})
 		return
 	}
 
@@ -41,8 +43,8 @@ func getOrder(c *gin.Context) {
 func deleteOrder(c *gin.Context) {
 	id := c.Param("id")
 
-	if order, ok := store.deleteOrder(id); ok {
-		c.JSON(http.StatusOK, order)
+	if _, ok := store.deleteOrder(id); ok {
+		c.Status(http.StatusOK)
 		return
 	}
 
