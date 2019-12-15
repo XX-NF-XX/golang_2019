@@ -51,6 +51,8 @@ func (s *Store) getOrder(id string) (o *Order, ok bool) {
 
 func (s *Store) deleteOrder(id string) (o *Order, ok bool) {
 	o, ok = s.getOrder(id)
-	delete(s.Orders, id)
+	if ok {
+		delete(s.Orders, id)
+	}
 	return
 }
