@@ -8,7 +8,7 @@ type Products []int
 // Status - Order status
 type Status int
 
-// List of order statuses
+// Enum of order statuses
 const (
 	New Status = iota
 	InProgress
