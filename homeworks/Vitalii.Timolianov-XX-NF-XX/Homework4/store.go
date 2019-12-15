@@ -5,10 +5,25 @@ import "github.com/rs/xid"
 // Products - list of products
 type Products []int
 
+// Status - Order status
+type Status int
+
+// List of order statuses
+const (
+	New Status = iota
+	InProgress
+	Done
+)
+
+func (s Status) String() string {
+	return [...]string{"new", "in progress", "done"}[s]
+}
+
 // Order - order to fulfill
 type Order struct {
 	Products Products `json:"products"`
 	ID       string   `json:"id"`
+	Status   Status   `json:"status"`
 }
 
 // Store - unit that fulfills orders within its storages
