@@ -6,8 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type incomingOrder struct {
+	Products []Product `json:"products"`
+}
+
 func addOrder(c *gin.Context) {
-	var order Order
+	var order incomingOrder
 	if err := c.ShouldBindJSON(&order); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -18,10 +22,10 @@ func addOrder(c *gin.Context) {
 		return
 	}
 
-	store.addOrder(&order)
+	id := store.createOrder(order.Products)
 
 	c.JSON(http.StatusOK, gin.H{
-		"orderId": order.ID,
+		"orderId": id,
 	})
 }
 
@@ -30,7 +34,7 @@ func getOrder(c *gin.Context) {
 
 	if order, ok := store.getOrder(id); ok {
 		c.JSON(http.StatusOK, gin.H{
-			"status": order.Status.String(),
+			"status": order.getStatus().String(),
 		})
 		return
 	}

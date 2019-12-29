@@ -1,58 +1,82 @@
 package main
 
-import "github.com/rs/xid"
-
-// Products - list of products
-type Products []int
-
-// Status - Order status
-type Status int
-
-// Enum of order statuses
-const (
-	New Status = iota
-	InProgress
-	Done
-)
-
-func (s Status) String() string {
-	return [...]string{"new", "in progress", "done"}[s]
-}
-
-// Order - order to fulfill
-type Order struct {
-	Products Products `json:"products"`
-	ID       string   `json:"id"`
-	Status   Status   `json:"status"`
-}
+import "fmt"
 
 // Store - unit that fulfills orders within its storages
 type Store struct {
-	Orders   map[string]*Order
-	Storages []Products
+	orders          map[string]*Order
+	storages        []*Storage
+	updatedStorages chan *Storage
+	canceled        *Storage
 }
 
-func newStore() Store {
-	return Store{
-		Orders:   make(map[string]*Order),
-		Storages: make([]Products, 0),
+func defaultStorages(updatedStorages chan *Storage) []*Storage {
+	return []*Storage{
+		newStorage([]Product{1, 1, 2, 3}, updatedStorages),
+		newStorage([]Product{2, 3, 4}, updatedStorages),
+		newStorage([]Product{1, 3}, updatedStorages),
+		newStorage([]Product{5, 4, 3}, updatedStorages),
+		newStorage([]Product{2, 2, 1}, updatedStorages),
 	}
 }
 
-func (s *Store) addOrder(o *Order) {
-	o.ID = xid.New().String()
-	s.Orders[o.ID] = o
+func (s *Store) addUpdatedStorages() {
+	for storage := range s.updatedStorages {
+		for _, order := range s.orders {
+			order.checkStorage(storage)
+		}
+	}
+}
+
+func newStore() Store {
+	updatedStorages := make(chan *Storage)
+
+	store := Store{
+		orders:          make(map[string]*Order),
+		updatedStorages: updatedStorages,
+		storages:        defaultStorages(updatedStorages),
+		canceled:        newStorage([]Product{}, nil),
+	}
+
+	go store.addUpdatedStorages()
+
+	return store
+}
+
+func (s *Store) createOrder(products []Product) string {
+	s.log()
+	order := newOrder(products)
+	s.orders[order.id] = &order
+
+	for _, entry := range order.entries {
+		go entry.checkStorages(s.storages...)
+	}
+
+	return order.id
 }
 
 func (s *Store) getOrder(id string) (o *Order, ok bool) {
-	o, ok = s.Orders[id]
+	o, ok = s.orders[id]
 	return
 }
 
 func (s *Store) deleteOrder(id string) (o *Order, ok bool) {
 	o, ok = s.getOrder(id)
+
 	if ok {
-		delete(s.Orders, id)
+		products := o.cancel()
+		s.canceled.addProduct(products...)
+		delete(s.orders, id)
 	}
+
+	s.log()
 	return
+}
+
+func (s *Store) log() {
+	fmt.Printf("Storages:\n")
+	for i, storage := range s.storages {
+		fmt.Printf("%v: %v\n", i, storage)
+	}
+	fmt.Printf("Canceled: %v\n", s.canceled)
 }
