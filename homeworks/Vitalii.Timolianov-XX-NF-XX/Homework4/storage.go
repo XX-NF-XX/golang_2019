@@ -1,6 +1,9 @@
 package main
 
-import "sync"
+import (
+	"sync"
+	"fmt"
+)
 
 // Storage - product container
 type Storage struct {
@@ -38,4 +41,8 @@ func (s *Storage) getProduct(p Product) (product Product, ok bool) {
 
 func (s *Storage) addProduct(products ...Product) {
 	s.products = append(s.products, products...)
+}
+
+func (s *Storage) String() string {
+	return fmt.Sprintf("%v", s.products)
 }

@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-// Store - unit that fulfills orders within its storages
+// Store - unit that fulfills orders using its storages
 type Store struct {
 	orders          map[string]*Order
 	storages        []*Storage
@@ -11,13 +11,20 @@ type Store struct {
 }
 
 func defaultStorages(updatedStorages chan *Storage) []*Storage {
-	return []*Storage{
+	storages := []*Storage{
 		newStorage([]Product{1, 1, 2, 3}, updatedStorages),
 		newStorage([]Product{2, 3, 4}, updatedStorages),
 		newStorage([]Product{1, 3}, updatedStorages),
 		newStorage([]Product{5, 4, 3}, updatedStorages),
 		newStorage([]Product{2, 2, 1}, updatedStorages),
 	}
+
+	fmt.Println("Created default storages:");
+	for i, storage := range storages {
+		fmt.Printf("storage #%v: %v\n", i, storage)
+	}
+
+	return storages;
 }
 
 func (s *Store) addUpdatedStorages() {
@@ -56,6 +63,7 @@ func (s *Store) createOrder(products []Product) string {
 }
 
 func (s *Store) getOrder(id string) (o *Order, ok bool) {
+	s.log()
 	o, ok = s.orders[id]
 	return
 }
